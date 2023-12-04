@@ -68,6 +68,98 @@ kable(my_data, caption = "Description of the columns", align = "c")
 
 ```
 
+### Describing and interpreting missing values and outliers
+
+```{r}
+#| label: Finding missing values
+
+library(purrr)
+# Compute the total number of NA values in the dataset
+nas <- haunted_places %>% 
+  purrr::map_dbl(~sum(is.na(.))) %>% 
+  sum()
+
+cat("The dataset contains ", nas, "NA values. \n")
+```
+
+```{r, warning=FALSE}
+#| label: Finding incomplete rows
+
+# Compute the number of incomplete rows in the dataset
+incomplete_rows <- haunted_places %>% 
+  summarise_all(~!complete.cases(.)) %>%
+  nrow()
+
+cat("The dataset contains ", incomplete_rows, "(out of ", nrow(haunted_places),") incomplete rows. \n")
+```
+
+```{r}
+#| label: Finding the Outliers (Boxplot)
+
+# Selecting numeric columns for outlier detection (longitude and latitude)
+numeric_columns <- c("longitude", "latitude")
+
+# Filtering out non-finite values from the selected columns
+valid_data <- haunted_places[rowSums(is.na(haunted_places[, numeric_columns])) == 0, ]
+
+# Creating boxplots for numeric columns to identify outliers
+par(mfrow = c(1, length(numeric_columns)))  # Setting the layout for multiple plots
+
+for (col in numeric_columns) {
+  boxplot(valid_data[[col]], main = col, ylab = col, outline = TRUE)
+}
+
+```
+
+```{r, warning=FALSE}
+#| label: Summary of Outliers
+
+# Selecting numeric columns for outlier detection (longitude and latitude)
+numeric_columns <- c("longitude", "latitude")
+
+# Function to convert to numeric and calculate outlier metrics
+calculate_outlier_metrics <- function(data, column) {
+  # Convert the column to numeric, handling non-convertible values
+  data[[column]] <- as.numeric(as.character(data[[column]]))
+  
+  # Filter out non-numeric values (NA after conversion)
+  numeric_data <- data[!is.na(data[[column]]), ]
+  
+  # Calculating quartiles for outlier detection
+  Q1 <- quantile(numeric_data[[column]], 0.25, na.rm = TRUE)
+  Q3 <- quantile(numeric_data[[column]], 0.75, na.rm = TRUE)
+  
+  # Interquartile range (IQR)
+  IQR <- Q3 - Q1
+  
+  # Outlier boundaries
+  lower_bound <- Q1 - 1.5 * IQR
+  upper_bound <- Q3 + 1.5 * IQR
+  
+  # Identify outliers
+  outliers <- numeric_data[numeric_data[[column]] < lower_bound | numeric_data[[column]] > upper_bound, column]
+  
+  # Calculate metrics
+  outliers_cnt <- length(outliers)
+  outliers_ratio <- outliers_cnt / length(numeric_data[[column]])
+  
+  # Return metrics
+  return(list(outliers_cnt = outliers_cnt, 
+              outliers_ratio = outliers_ratio))
+}
+
+# Calculate metrics for each numeric column
+outlier_metrics <- lapply(numeric_columns, function(col) {
+  calculate_outlier_metrics(haunted_places, col)
+})
+
+# Convert the list of metrics to a data frame
+outlier_metrics_df <- do.call(rbind.data.frame, outlier_metrics)
+rownames(outlier_metrics_df) <- numeric_columns
+
+
+outlier_metrics_df
+```
 ## 2 - Data preprocessing
 
 ```{r}
