@@ -214,6 +214,83 @@ cleaned_haunted_places <- haunted_places[haunted_places$na_count != max_na_count
 haunted_places <- select(cleaned_haunted_places, -na_count)
 ```
 
+```{r}
+#| label: Finding a random row with NAs
+
+haunted_places[7,]
+```
+
+Here, the latitude and longitude have NAs. Aiming for mean or median imputation for the latitude first can be a good approach.
+
+```{r, warning=FALSE}
+#| label:  plot a QQ plot of latitude
+install.packages("car")
+library(car)
+ggplot(haunted_places, aes(sample = latitude)) +
+  geom_qq_band() +
+  stat_qq_point() +
+    stat_qq_line(color = "red", method = "identity", intercept = -2, slope = 1) +  
+  ggtitle("Normal QQ plot of latitude") 
+```
+
+Since the straight line fits the data pretty well so latitude is normal, mean value can be filled in the unknown.
+
+```{r}
+#| label: Mean Imputation for the selected row.
+haunted_places <- haunted_places |>
+  mutate(latitude = ifelse(row_number() == 7, mean(latitude, na.rm = TRUE), latitude))
+haunted_places
+```
+
+Now, it's time for longitude.
+
+```{r, warning=FALSE}
+#| label:  plot a QQ plot of latitude
+ggplot(haunted_places, aes(sample = longitude)) +
+  geom_qq_band() +
+  stat_qq_point() +
+    stat_qq_line(color = "red", method = "identity", intercept = -2, slope = 1) +  
+  ggtitle("Normal QQ plot of latitude") 
+```
+
+```{r}
+#| label: Finding mean and median for longitude
+median(haunted_places$longitude, na.rm = TRUE)
+mean(haunted_places$longitude, na.rm = TRUE)
+```
+
+Median seems to be more appropriate value to replace NAs in longitude and NAs in latitude with mean should be a optimal solution. 
+
+```{r}
+#| label: Mean Imputation for Latitude
+haunted_places <- haunted_places |>
+  mutate(latitude = if_else(is.na(latitude), mean(latitude, na.rm = TRUE), latitude))
+```
+
+```{r}
+#| label: Median Imputation for Longitude
+haunted_places <- haunted_places |>
+  mutate(longitude = if_else(is.na(longitude), median(longitude, na.rm = TRUE), longitude))
+
+haunted_places
+```
+
+```{r}
+#| label: Finding remaining NAs
+missing.value.rows <- haunted_places |>
+  filter(!complete.cases(haunted_places))
+missing.value.rows
+```
+
+Still, there are 29 rows out of 10989 rows which can be removed.
+
+```{r}
+#| label: Removing the remaining 29 rows 
+
+haunted_places <- haunted_places %>%
+  filter(complete.cases(.))
+```
+
 
 
 ## 3 - Ordinary Least Squares Regression
