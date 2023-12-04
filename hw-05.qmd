@@ -173,10 +173,48 @@ For this question, creating a regression model where latitude or longitude is th
 
 ## 2 - Data preprocessing
 
+### Handling Missing Values and Outliers
+
+As observed from above conclusions about missing values and outliers, since there is only one outlier, that need not be handled. But there are 2586 NA values in the dataset which needs to be handled
+
 ```{r}
-#| label: label-me-2
+#| label: Removing columns with many NAs
+library(dplyr)
+
+missing.value.rows <- haunted_places |>
+  filter(!complete.cases(haunted_places))
+missing.value.rows
 
 ```
+
+1272 out of 10992 rows contains an NA
+
+```{r}
+#| label: Finding the number of NAs in each row
+
+haunted_places <- haunted_places %>%
+  mutate(na_count = rowSums(is.na(haunted_places)))
+# Find the maximum count of NA values
+max_na_count <- max(haunted_places$na_count)
+# Print rows with the maximum number of NA values
+rows_with_max_na <- haunted_places[haunted_places$na_count == max_na_count, ]
+print(rows_with_max_na)
+
+```
+
+There are only three rows with maximum NA values. The easiest way to handle them is to remove the three columns.
+
+```{r}
+#| label: Removing rows with maximum NA values.
+
+# Remove rows with the maximum number of NA values from the dataset
+cleaned_haunted_places <- haunted_places[haunted_places$na_count != max_na_count, ]
+
+# Remove the 'na_count' column if you no longer need it
+haunted_places <- select(cleaned_haunted_places, -na_count)
+```
+
+
 
 ## 3 - Ordinary Least Squares Regression
 
