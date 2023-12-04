@@ -173,7 +173,7 @@ For this question, creating a regression model where latitude or longitude is th
 
 ## 2 - Data preprocessing
 
-### Handling Missing Values and Outliers
+### Data Cleaning - Handling Missing Values and Outliers
 
 As observed from above conclusions about missing values and outliers, since there is only one outlier, that need not be handled. But there are 2586 NA values in the dataset which needs to be handled
 
@@ -245,7 +245,7 @@ haunted_places
 Now, it's time for longitude.
 
 ```{r, warning=FALSE}
-#| label:  plot a QQ plot of latitude
+#| label:  plot a QQ plot of longitude
 ggplot(haunted_places, aes(sample = longitude)) +
   geom_qq_band() +
   stat_qq_point() +
@@ -290,7 +290,6 @@ Still, there are 29 rows out of 10989 rows which can be removed.
 haunted_places <- haunted_places %>%
   filter(complete.cases(.))
 ```
-
 
 
 ## 3 - Ordinary Least Squares Regression
