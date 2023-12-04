@@ -160,6 +160,17 @@ rownames(outlier_metrics_df) <- numeric_columns
 
 outlier_metrics_df
 ```
+
+### Identifying the relationships for examination:
+
+Given the nature of the data containing information about haunted places, the variables available are mostly categorical (character) or geographical (latitude, longitude). All the haunted places are located only in the United States. Also, the amount of detail in descriptions of these locations is highly variable. Therefore, the relationships to examine in this context could involve investigating whether there's a relationship between the geographical coordinates (latitude and longitude) of haunted places and their corresponding city, state, or country.
+
+### Question to solve
+
+Can we predict the latitude or longitude of a haunted place based on its location description (i.e., city, state, country)?
+
+For this question, creating a regression model where latitude or longitude is the dependent variable, and the independent variables include categorical variables like city, state, and country might be useful. This could help explore whether certain locations tend to have specific latitude or longitude coordinates associated with haunted places.
+
 ## 2 - Data preprocessing
 
 ```{r}
