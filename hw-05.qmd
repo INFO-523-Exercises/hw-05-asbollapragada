@@ -1,6 +1,6 @@
 ---
 title: "HW 05"
-author: "INSERT YOUR NAME HERE"
+author: "Anjani Sowmya Bollapragada - 23851219"
 format:
   html:
     embed-resources: true
@@ -9,8 +9,62 @@ toc: true
 
 ## 1 - Data selection and exploration
 
+
+```{r, warning=FALSE, message=FALSE}
+#| label: Installing and Loading the packages
+
+# Required package for quick package downloading and loading 
+if (!require(pacman))
+  install.packages("pacman")
+
+library(pacman)
+
+p_load(dlookr,
+       DMwR2, # Data Mining with R functions
+       tidyverse, # Data wrangling, manipulation, visualization
+       DBI, # DBI databases
+       formattable, # HTML tables from R outputs
+               here, # Standardizes paths to data
+               kableExtra, # Alternative to formattable
+               knitr, # Needed to write HTML reports
+               missRanger, # To generate NAs
+       janitor,
+       RMySQL, # Utilizing MySQL drivers
+       tidymodels, # Tidyverse format modeling (e.g., lm())
+       qqplotr) 
+```
+
+```{r, warning=FALSE}
+#| label: Loading-the-csv-file
+
+haunted_places <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-10-10/haunted_places.csv', show_col_types = FALSE)
+```
+
+### Describing all columns
+
 ```{r}
-#| label: label-me-1
+#| label: Describing the columns
+
+# Create a sample data frame to describe the data
+my_data <- data.frame(
+  variable = c("city","country","description","location","state","state_abbrev","longitude","latitude","city_longitude","city_latitude"),
+  class = c("character","character","character","character","character","character","double","double","double","double"),
+  description = c("The city where the place is located.",
+"The country where the place is located - only United States",
+"A text description of the place.",
+"A title for the haunted place.",
+"The US state where the place is located.",
+"The two-letter abbreviation for the state.",
+"Longitude of the place.",
+"Latitude of the place.",
+"Longitude of the city center.",
+"Latitude of the city center.")
+)
+
+library(knitr)
+
+# Print the data frame as a table using knitr::kable()
+kable(my_data, caption = "Description of the columns", align = "c")
 
 ```
 
