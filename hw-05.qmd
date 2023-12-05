@@ -291,6 +291,63 @@ haunted_places <- haunted_places %>%
   filter(complete.cases(.))
 ```
 
+### Data Transformation - Feature Scaling
+
+```{r}
+#| label: Normalization of numeric columns
+
+# select only numeric columns
+haunted_places_numeric <- select(haunted_places, latitude, longitude, city_latitude, city_longitude)
+
+# normalize numeric columns
+haunted_places_norm <- scale(haunted_places_numeric)
+
+# convert back to data frame and add species column
+haunted.norm <- cbind(as.data.frame(haunted_places_norm))
+
+head(haunted.norm)
+summary(haunted.norm)
+```
+
+### Data Reduction - Dimentionality Reduction
+
+```{r}
+#| label: Principal Component Analysis
+
+# Select numeric columns for PCA
+pca_data <- subset(haunted_places, select = c("longitude", "latitude", "city_longitude", "city_latitude"))
+
+
+# Perform PCA
+pca_result <- prcomp(pca_data, scale. = TRUE)
+
+# Summary of PCA
+summary(pca_result)
+
+# Accessing principal components and variance explained
+pca_result$rotation  # Principal components (loadings)
+pca_result$sdev^2 / sum(pca_result$sdev^2)  # Variance explained by each PC
+```
+
+PC1 has a standard deviation of approximately 1.4956.
+PC2 has a standard deviation of approximately 1.2548.
+PC3 and PC4 have smaller standard deviations (0.34391 and 0.26516, respectively).
+
+PC1 explains about 55.92% of the total variance.
+PC2 explains about 39.36% of the total variance.
+PC3 explains about 2.96% of the total variance.
+PC4 explains about 1.76% of the total variance.
+
+Together, PC1 and PC2 account for approximately 95.28% of the total variance, which means they capture most of the variability in the data.
+
+```{r}
+#| label: Dimentionality Reduction
+haunted_places <- haunted_places %>%
+  select(-city_latitude, -city_longitude)  # Exclude 'city_latitude' and 'city_longitude'
+
+head(haunted_places)
+```
+
 
 ## 3 - Ordinary Least Squares Regression
 
