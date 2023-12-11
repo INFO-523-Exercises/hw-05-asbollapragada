@@ -603,4 +603,146 @@ The OLS regression model, using longitude and latitude as predictors, demonstrat
 
 ## 4 - Alternative regressions 
 
+### Random Forest Regression
+
+```{r}
+#| label: Random Forest Regression
+
+# Load necessary library
+library(randomForest)
+
+# Assuming 'haunted_places' contains your dataset
+
+# Define predictor variables (excluding non-numeric columns or the target variable)
+predictor_variables <- subset(haunted_places, select = c("longitude", "latitude"))
+
+# Define the target variable
+target_variable <- haunted_places$target_variable
+
+# Create training and testing datasets
+train_indices <- sample(nrow(haunted_places), 0.8 * nrow(haunted_places))  # 80% train, 20% test
+train_data <- predictor_variables[train_indices, ]
+test_data <- predictor_variables[-train_indices, ]
+train_target <- target_variable[train_indices]
+test_target <- target_variable[-train_indices]
+
+# Train the Random Forest model
+rf_model <- randomForest(train_target ~ ., data = train_data)
+
+# Predict on test data
+predictions <- predict(rf_model, newdata = test_data)
+
+# Evaluate model performance
+# Calculate R-squared
+rsquared <- cor(test_target, predictions)^2
+
+# Calculate Root Mean Squared Error (RMSE)
+rmse <- sqrt(mean((test_target - predictions)^2))
+
+# Calculate Mean Absolute Error (MAE)
+mae <- mean(abs(test_target - predictions))
+
+# Print performance metrics
+cat("R-squared:", rsquared, "\n")
+cat("Root Mean Squared Error (RMSE):", rmse, "\n")
+cat("Mean Absolute Error (MAE):", mae, "\n")
+
+
+
+```
+
+Interpretation of the results:
+
+R-squared: 0.9956
+
+R-squared is a measure of how well the model explains the variance in the target variable. In this case, an R-squared value of 0.9956 indicates that approximately 99.56% of the variance in the target variable is explained by the model.
+
+Root Mean Squared Error (RMSE): 0.3184
+
+RMSE measures the average deviation of the predicted values from the actual values. A lower RMSE value signifies better accuracy. Here, the RMSE of 0.3184 indicates that, on average, the model's predictions deviate by approximately 0.3184 units from the actual values.
+
+Mean Absolute Error (MAE): 0.0318
+
+MAE measures the average absolute differences between the predicted and actual values. A lower MAE suggests better model performance. The MAE of 0.0318 implies that, on average, the predictions differ by approximately 0.0318 units from the actual values.
+
+Overall, these metrics suggest that the Random Forest Regression model performs quite well in predicting the target variable based on the provided geographical data, with high accuracy and minimal error.
+
+### Support Vector Regression
+
+```{r, message=FALSE}
+#| label: Support Vector Regression (SVR)
+
+# Load necessary library
+library(e1071)
+
+# Define predictor variables (excluding non-numeric columns or the target variable)
+predictor_variables <- subset(haunted_places, select = c("longitude", "latitude"))
+
+# Define the target variable
+target_variable <- haunted_places$target_variable
+
+# Create training and testing datasets
+train_indices <- sample(nrow(haunted_places), 0.8 * nrow(haunted_places))  # 80% train, 20% test
+train_data <- predictor_variables[train_indices, ]
+test_data <- predictor_variables[-train_indices, ]
+train_target <- target_variable[train_indices]
+test_target <- target_variable[-train_indices]
+
+# Train the Support Vector Regression (SVR) model
+svr_model <- svm(train_target ~ ., data = train_data, kernel = "radial")
+
+# Predict on test data
+predictions <- predict(svr_model, newdata = test_data)
+
+# Evaluate model performance
+# Calculate R-squared
+rsquared <- cor(test_target, predictions)^2
+
+# Calculate Root Mean Squared Error (RMSE)
+rmse <- sqrt(mean((test_target - predictions)^2))
+
+# Calculate Mean Absolute Error (MAE)
+mae <- mean(abs(test_target - predictions))
+
+# Print performance metrics
+cat("R-squared:", rsquared, "\n")
+cat("Root Mean Squared Error (RMSE):", rmse, "\n")
+cat("Mean Absolute Error (MAE):", mae, "\n")
+
+```
+
+Interpretation of the results:
+
+The Support Vector Regression (SVR) model achieved an R-squared value of 0.9024, indicating that approximately 90.24% of the variance in the target variable is explained by the model.
+
+The Root Mean Squared Error (RMSE) value of 1.5664 suggests that, on average, the model's predictions deviate by approximately 1.5664 units from the actual values.
+
+The Mean Absolute Error (MAE) value of 0.2845 represents the average absolute difference between the predicted and actual values, which is approximately 0.2845 units.
+
+Overall, the SVR model seems to capture a substantial portion of the variance in the target variable with reasonably low errors in prediction.
+
 ## 5 - Model performance and correct selection
+
+OLS Model: 
+Achieves the highest R-squared value (closest to 1), indicating an excellent fit. It also has the lowest RMSE and MAE among the three models, signifying more accurate predictions and lower errors compared to the other models.
+
+Random Forest Model: 
+Demonstrates strong performance with a high R-squared value, indicating a good fit. While having a slightly higher RMSE compared to OLS, it excels in MAE, indicating accurate predictions with very low error on average.
+
+SVR Model: 
+Although the SVR model has a respectable R-squared value, it exhibits higher RMSE and MAE compared to the OLS and Random Forest models, suggesting less accurate predictions and higher error in comparison.
+
+### Correct Model Selection:
+
+OLS Regression: 
+Best suited when the relationship between predictors and target variable is linear, and when the assumptions of OLS are met. It performs remarkably well in this scenario with high accuracy and low error metrics.
+
+Random Forest Regression: 
+Effective for non-linear relationships and handling complex datasets. Although its performance is slightly lower in this case than OLS, it excels in handling non-linear relationships.
+
+SVR (Support Vector Regression): 
+While it's a powerful model, it seems less suitable for this dataset as it exhibits lower accuracy and higher error metrics compared to the other models.
+
+Conclusion:
+
+Considering the high R-squared value, low RMSE, and MAE, the *OLS Regression* model appears to be the most suitable choice for this dataset due to its excellent overall performance in accurately predicting the target variable. However, if the relationship is nonlinear or more complex, the Random Forest Regression might be a better choice, as it performs closely to OLS with a lower MAE, indicating precise predictions.
