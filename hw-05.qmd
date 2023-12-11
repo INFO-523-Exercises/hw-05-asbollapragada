@@ -343,7 +343,7 @@ Together, PC1 and PC2 account for approximately 95.28% of the total variance, wh
 ```{r}
 #| label: Dimentionality Reduction
 haunted_places <- haunted_places %>%
-  select(-city_latitude, -city_longitude)  # Exclude 'city_latitude' and 'city_longitude'
+  select(-country, -description, -city_latitude, -city_longitude)  # Exclude 'city_latitude' and 'city_longitude'
 
 head(haunted_places)
 ```
@@ -351,6 +351,255 @@ head(haunted_places)
 
 ## 3 - Ordinary Least Squares Regression
 
+Conducting an Ordinary Least Squares (OLS) regression with resampling and evaluating the model performance involves a sequence of steps. 
+
+### Assumption Checks
+
+```{r}
+
+#| label: Assumption Checks
+
+
+# Load necessary libraries
+library(tidymodels)
+library(ggplot2)
+
+# Convert 'target_variable' to the integer
+haunted_places$target_variable <- as.integer(haunted_places$latitude)  
+
+# Define the target variable and predictor variables
+target_variable <- haunted_places$latitude  
+
+# Select predictor variables (excluding non-numeric columns or the target variable)
+predictor_variables <- select(haunted_places, -target_variable, -city, -location, -state, -state_abbrev)
+
+# Perform Ordinary Least Squares (OLS) regression
+ols_model <- lm(target_variable ~ ., data = predictor_variables)
+
+# Summary of the OLS model
+summary(ols_model)
+
+# Check assumptions - Residuals vs Fitted Values (Linearity)
+plot(ols_model, which = 1)
+
+# Check assumptions - Normal Q-Q Plot (Normality of Residuals)
+plot(ols_model, which = 2)
+
+# Check assumptions - Scale-Location Plot (Homoscedasticity)
+plot(ols_model, which = 3)
+
+# Check assumptions - Residuals vs Leverage (Influence)
+plot(ols_model, which = 5)
+
+```
+
+Interpretation of the Result:
+
+Residuals:
+Min to Max Values: The range of residuals (difference between observed and predicted values) is between -1.097e-13 and 1.140e-11. Residuals are very close to zero, indicating that the model predicts the observed values very accurately.
+
+Coefficients:
+Intercept (Interpretation): The intercept of approximately -9.264e-13 suggests that when both longitude and latitude are zero, the predicted value of the target variable is around -9.264e-13.
+
+Longitude (Estimate): The coefficient for longitude is approximately -8.201e-16. However, the p-value of < 2e-16 suggests that longitude is statistically significant in predicting the target variable.
+
+Latitude (Estimate): The coefficient for latitude is approximately 1.000, which means that for every one-unit increase in latitude, the predicted value of the target variable increases by 1.000 units. This predictor is highly statistically significant (p-value < 2e-16).
+
+Model Fit:
+R-squared and Adjusted R-squared: The R-squared value of 1 indicates that 100% of the variance in the target variable is explained by the model. The adjusted R-squared (same value) confirms the lack of overfitting.
+
+F-statistic: The extremely high F-statistic (1.132e+31) and its associated p-value (< 2.2e-16) indicate that the overall model is statistically significant, suggesting that at least one predictor significantly contributes to the model.
+
+Residual Standard Error: The residual standard error (RSE) of 1.089e-13 represents the standard deviation of the residuals, measuring the average distance of the observed values from the predicted values. Lower values indicate a better fit of the model to the data.
+
+In summary, both latitude and longitude variables appear to be highly significant in predicting the target variable. The model explains 100% of the variance in the target variable, suggesting an excellent fit to the data.
+
+
+### Splitting the Dataset
+
+```{r, message=FALSE}
+#| label: Splitting the Dataset
+# Load necessary libraries
+library(caret)
+
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Create indices for the split (80% training, 20% testing)
+train_indices <- createDataPartition(haunted_places$target_variable, p = 0.8, list = FALSE)
+
+# Create training and testing datasets based on the indices
+train_data <- haunted_places[train_indices, ]
+test_data <- haunted_places
+
+```
+
+### Model Building
+
+```{r}
+#| label: Model Building
+
+# Convert character variables to factors with specific levels
+train_data$city <- factor(train_data$city, levels = unique(train_data$city))
+train_data$location <- factor(train_data$location, levels = unique(train_data$location))
+train_data$state <- factor(train_data$state, levels = unique(train_data$state))
+train_data$state_abbrev <- factor(train_data$state_abbrev, levels = unique(train_data$state_abbrev))
+
+# Define the formula for the OLS regression model
+formula <- target_variable ~ . - city - location - state - state_abbrev
+
+
+# Build the OLS regression model using the training data
+ols_model_train <- lm(formula, data = train_data)
+
+# Summary of the OLS model using training data
+summary(ols_model_train)
+
+
+```
+
+Interpretation of the result:
+
+Residuals:
+Min to Max Values: The range of residuals (difference between observed and predicted values) is between -0.51537 and 0.87792. Residuals are symmetrically distributed around zero, suggesting that the model's errors have no particular trend.
+
+Coefficients:
+Intercept (Interpretation): The intercept of approximately -0.485 implies that when both longitude and latitude are zero, the predicted value of the target variable is around -0.485.
+
+Longitude (Estimate): The coefficient for longitude is approximately -7.898e-05. However, the p-value of 0.66 suggests that longitude is not statistically significant in predicting the target variable at conventional significance levels (e.g., α = 0.05).
+
+Latitude (Estimate): The coefficient for latitude is approximately 0.9998. It indicates that for every one-unit increase in latitude, the predicted value of the target variable increases by about 0.9998 units. This predictor is highly statistically significant (p-value < 2e-16).
+
+Model Fit:
+R-squared and Adjusted R-squared: The R-squared value of approximately 0.9968 indicates that around 99.68% of the variance in the target variable is explained by the model, indicating a very good fit. The adjusted R-squared (same value) confirms the lack of overfitting.
+
+F-statistic: The very high F-statistic (1.361e+06) and its associated p-value (< 2.2e-16) indicate that the overall model is statistically significant, suggesting that at least one predictor significantly contributes to the model.
+
+Residual Standard Error: The residual standard error (RSE) of 0.2803 represents the standard deviation of the residuals, measuring the average distance of the observed values from the predicted values. Lower values indicate a better fit of the model to the data.
+
+In summary, the latitude variable appears to be highly significant in predicting the target variable, while longitude does not significantly contribute to the model. The model explains a very high percentage of variance in the target variable and demonstrates an excellent fit to the data.
+
+### Model Diagnostics
+
+```{r}
+#| label: Model Diagnostics
+
+# Residuals vs Fitted Values Plot (Linearity Check)
+plot(ols_model_train, which = 1)
+
+# Normal Q-Q Plot (Normality of Residuals Check)
+plot(ols_model_train, which = 2)
+
+# Scale-Location Plot (Homoscedasticity Check)
+plot(ols_model_train, which = 3)
+
+# Residuals vs Leverage Plot (Influence Check)
+plot(ols_model_train, which = 5)
+
+# Examine variable significance using p-values
+coefficients_table <- tidy(ols_model_train)
+coefficients_table
+
+```
+
+Interpretation of the result: 
+
+From the coefficients table, 'Latitude' seems to be a significant predictor in the model as indicated by its low p-value, suggesting it has a strong relationship with the dependent variable. Conversely, 'longitude' does not appear to significantly impact the dependent variable based on its non-significant p-value.
+
+### Evaluate Model Performance
+
+```{r}
+#| label: Evaluate Model Performance
+
+# Ensure the 'city' variable levels in test data match those in the training data
+test_data$city <- factor(test_data$city, levels = levels(train_data$city))
+
+# Ensure the 'location' variable levels in test data match those in the training data
+test_data$location <- factor(test_data$location, levels = levels(train_data$location))
+
+# Apply the model to the modified test set to get predictions
+y_pred_test <- predict(ols_model_train, newdata = test_data)
+
+# Create a data frame for plotting
+plot_data <- data.frame(True_Values = as.vector(test_data$target_variable), Predicted_Values = y_pred_test)
+
+# Plotting true vs predicted values
+ggplot(plot_data, aes(x = True_Values, y = Predicted_Values)) +
+  geom_point(color = 'black') +
+  ggtitle('Comparing true and predicted values for test set') +
+  xlab('True values for y') +
+  ylab('Predicted values for y')
+
+
+```
+
+We can see that the values are more concentrated at the positive values. i.e. the true values and predicted values are most similar starting from 25.
+
+```{r}
+#| label: Evaluate Model Accuracy
+
+# Calculate R-squared
+rsquared <- cor(test_data$target_variable, y_pred_test)^2
+
+# Calculate Root Mean Squared Error (RMSE)
+rmse <- sqrt(mean((test_data$target_variable - y_pred_test)^2))
+
+# Calculate Mean Absolute Error (MAE)
+mae <- mean(abs(test_data$target_variable - y_pred_test))
+
+# Print the calculated metrics
+cat("R-squared:", rsquared, "\n")
+cat("Root Mean Squared Error (RMSE):", rmse, "\n")
+cat("Mean Absolute Error (MAE):", mae, "\n")
+
+```
+
+Interpretation of the results:
+
+R-squared (R²): The R-squared value of approximately 0.997 (or 99.7%) suggests that the model explains around 99.7% of the variance in the target variable. This high value indicates that the model fits the data extremely well.
+
+Root Mean Squared Error (RMSE): The RMSE value of approximately 0.280 indicates that, on average, the model's predictions differ from the actual values by about 0.280 units. Lower RMSE values indicate better accuracy, and this value is relatively low, suggesting good performance.
+
+Mean Absolute Error (MAE): The MAE value of approximately 0.242 implies that, on average, the model's predictions deviate from the actual values by around 0.242 units. Lower MAE values indicate better accuracy, and this value is relatively low, suggesting the model's predictions are close to the actual values.
+
+In summary, these metrics collectively show that the model has a strong predictive capability and performs well in capturing the patterns within the dataset, with high accuracy and minimal errors in predictions.
+
+### Summary of the findings
+
+Process:
+
+Data Preparation:
+The dataset consisted of variables such as city, location, longitude, latitude, and a target variable.
+
+Ordinary Least Squares (OLS) regression was performed to predict the target variable using longitude and latitude as predictors.
+
+Model Building:
+OLS regression models were built using longitude and latitude as predictors to forecast the target variable.
+The model's coefficients were estimated, and the model's statistical significance was evaluated using p-values and F-statistics.
+
+Assumption Checks:
+Assumptions of the OLS regression were verified, including linearity, normality of residuals, homoscedasticity, and independence.
+
+Evaluation:
+The model's performance was assessed using various metrics such as R-squared, Root Mean Squared Error (RMSE), and Mean Absolute Error (MAE).
+Visualization techniques were employed to compare true vs. predicted values.
+
+Findings:
+
+Model Fit: 
+The OLS regression model had a perfect fit (R-squared = 1, Adjusted R-squared = 1), indicating that all variance in the target variable was explained by the predictors.
+Predictors Significance: Longitude and latitude were significant predictors, as indicated by their p-values (< 2e-16).
+
+Residuals: 
+The residuals were exceptionally close to zero, suggesting accurate predictions and a good fit to the observed values.
+
+Performance Metrics: 
+R-squared was high (close to 1), and both RMSE and MAE were extremely low, indicating a precise fit of the model to the data.
+
+Conclusion:
+
+The OLS regression model, using longitude and latitude as predictors, demonstrated an exceptional fit to the dataset. Both predictors showed high statistical significance in explaining the variance in the target variable. The model accurately predicted the target variable, as evidenced by the low error metrics (RMSE and MAE) and a perfect fit (R-squared = 1). Overall, the model proved to be a robust and accurate predictor of the target variable based on the provided dataset.
 
 ## 4 - Alternative regressions 
 
